@@ -1,0 +1,35 @@
+                                                        Start
+                                                          |
+                                                          v
+                                                  Generate a random
+                                                        word
+                                                          |
+                                                          v
+                                                Generate as many blanks 
+                                                  as letters in word
+                                                          |
+                                                          v
+                               --------------> Ask the user to guess <------------------
+                               |                       a letter                        |
+                               |                          |                            |
+                               |                          v                            |
+                               |                   Is the guessed                      |
+                               |            ---- letter in the word?  ----             |
+                               |            |                             |            |
+                               |      Yes   |                             | No         |
+                               |            v                             v            |
+                               |    Replace the blank                 Lose a life      |
+                               |      with the letter                     |            |
+                               |            |                             |            |
+                               |            |                             |            |
+                               |       Are all the                   Have they run     |
+                         No    ------ blanks filled?                 out of lives? -----  No
+                                            |                             |
+                                            |                             |
+                                    Yes     |                             |    Yes
+                                            |                             |
+                                            -------------------------------
+                                                          |
+                                                          |
+                                                          v
+                                                      GAME OVER
