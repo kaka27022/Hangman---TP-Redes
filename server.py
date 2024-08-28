@@ -8,6 +8,7 @@ import hangman_words
 def handle_client(client_socket, client_address, player_num, game_state):
     print(f"Player {player_num} connected from {client_address}")
     client_socket.send(f"Welcome Player {player_num}!\n".encode('utf-8'))
+    client_socket.send(f"{hangman_art.logo}\n".encode('utf-8'))
 
     if player_num == 1:
         client_socket.send("Choose difficulty (easy, medium, hard) ".encode('utf-8'))
@@ -29,33 +30,38 @@ def handle_client(client_socket, client_address, player_num, game_state):
         while not game_state['ready']:
             continue
 
-    while '-' in game_state['display']:
+    while game_state['lives'] > 0 and '-' in game_state['display']:
         if game_state['turn'] != player_num:
             continue
 
         client_socket.send(f"Word: {' '.join(game_state['display'])}\n".encode('utf-8'))
         client_socket.send(f"Your turn, Player {player_num}!\n".encode('utf-8'))
-        client_socket.send(f"Used letters: {', '.join(game_state['used_letters'])}\n".encode('utf-8'))
+        
 
         guess = client_socket.recv(16).decode('utf-8').lower().strip()
         if guess in game_state['used_letters']:
-            client_socket.send(f"You've already guessed {guess}.\n".encode('utf-8'))
+            client_socket.send(f"Already guessed {guess}.\n".encode('utf-8'))
         else:
             game_state['used_letters'].append(guess)
             if guess in game_state['chosen_word']:
+                client_socket.send(f"\nLetter {guess} is in the word!\n".encode('utf-8'))
                 for i, letter in enumerate(game_state['chosen_word']):
                     if letter == guess:
                         game_state['display'][i] = guess
             else:
-                client_socket.send(f"Letter {guess} is not in the word.\n".encode('utf-8'))
+                game_state['lives'] -= 1
+                client_socket.send(f"\nLetter {guess} is not in the word.\n".encode('utf-8'))
+                game_state['wrong_letters'].append(guess)
 
             game_state['turn'] = 1 if game_state['turn'] == 2 else 2
 
         notify_all_clients(game_state)
 
     if '-' not in game_state['display'] and player_num != game_state['turn']:   # Tem que ser diferente por que a turn muda, descoberta por tentativa
-        client_socket.send(f"Congratulations Player {player_num}, you won!\n".encode('utf-8'))
+        client_socket.send(f"Congratulations Player {player_num}, you won! The word was {game_state['chosen_word']}\n".encode('utf-8'))
     else:
+        if game_state['lives'] == 0:
+            client_socket.send(f"You lost all your lives.\n".encode('utf-8'))
         client_socket.send(f"Game over! The word was {game_state['chosen_word']}!\n".encode('utf-8'))
 
     client_socket.close()
@@ -63,8 +69,8 @@ def handle_client(client_socket, client_address, player_num, game_state):
 def notify_all_clients(game_state):
     for client in game_state['clients']:
         try:
-            client.send(f"Word: {' '.join(game_state['display'])}\n".encode('utf-8'))
-            client.send(f"Used letters: {', '.join(game_state['used_letters'])}\n".encode('utf-8'))
+            client.send(f"Wrong_letters: {', '.join(game_state['wrong_letters'])}\n".encode('utf-8'))
+            client.send(f"Lives: {game_state['lives']}\n".encode('utf-8'))
         except:
             continue
 
@@ -81,6 +87,8 @@ def server(host='localhost', port=8082):
         'chosen_word': None,
         'display': None,
         'used_letters': [],
+        'wrong_letters':[],
+        'lives': 6,
         'turn': 1,
         'clients': [],
         'ready': False,  # Game state is not ready until Player 1 sets it up
