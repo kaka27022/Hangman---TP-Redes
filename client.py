@@ -11,7 +11,7 @@ def client(host='localhost', port=8082):
                 print(message)
 
             if "Choose difficulty" in message:
-                difficulty = input("Enter difficulty (easy, medium, hard): ")
+                difficulty = input("Type difficulty: ")
                 client_socket.send(difficulty.encode('utf-8'))
             
             if "Your turn" in message:

@@ -10,6 +10,7 @@ def handle_client(client_socket, client_address, player_num, game_state):
     client_socket.send(f"Welcome Player {player_num}!\n".encode('utf-8'))
 
     if player_num == 1:
+        client_socket.send("Choose difficulty (easy, medium, hard) ".encode('utf-8'))
         difficulty = client_socket.recv(16).decode('utf-8').strip().lower()
         
         # Loop until a valid difficulty is chosen
