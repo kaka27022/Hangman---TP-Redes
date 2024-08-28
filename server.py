@@ -29,12 +29,12 @@ def handle_client(client_socket, client_address, player_num, game_state):
         while not game_state['ready']:
             continue
 
-    while game_state['lives'] > 0 and '-' in game_state['display']:
+    while '-' in game_state['display']:
         if game_state['turn'] != player_num:
             continue
 
-        client_socket.send(f"Your turn, Player {player_num}!\n".encode('utf-8'))
         client_socket.send(f"Word: {' '.join(game_state['display'])}\n".encode('utf-8'))
+        client_socket.send(f"Your turn, Player {player_num}!\n".encode('utf-8'))
         client_socket.send(f"Used letters: {', '.join(game_state['used_letters'])}\n".encode('utf-8'))
 
         guess = client_socket.recv(16).decode('utf-8').lower().strip()
@@ -47,17 +47,16 @@ def handle_client(client_socket, client_address, player_num, game_state):
                     if letter == guess:
                         game_state['display'][i] = guess
             else:
-                game_state['lives'] -= 1
-                client_socket.send(f"Letter {guess} is not in the word. You lose a life.\n".encode('utf-8'))
+                client_socket.send(f"Letter {guess} is not in the word.\n".encode('utf-8'))
 
             game_state['turn'] = 1 if game_state['turn'] == 2 else 2
 
         notify_all_clients(game_state)
 
-    if '-' not in game_state['display']:
+    if '-' not in game_state['display'] and player_num != game_state['turn']:   # Tem que ser diferente por que a turn muda, descoberta por tentativa
         client_socket.send(f"Congratulations Player {player_num}, you won!\n".encode('utf-8'))
     else:
-        client_socket.send(f"Game over! The word was {game_state['chosen_word']}\n".encode('utf-8'))
+        client_socket.send(f"Game over! The word was {game_state['chosen_word']}!\n".encode('utf-8'))
 
     client_socket.close()
 
@@ -66,7 +65,6 @@ def notify_all_clients(game_state):
         try:
             client.send(f"Word: {' '.join(game_state['display'])}\n".encode('utf-8'))
             client.send(f"Used letters: {', '.join(game_state['used_letters'])}\n".encode('utf-8'))
-            client.send(f"Lives left: {game_state['lives']}\n".encode('utf-8'))
         except:
             continue
 
@@ -82,7 +80,6 @@ def server(host='localhost', port=8082):
         'difficulty': None,
         'chosen_word': None,
         'display': None,
-        'lives': 6,
         'used_letters': [],
         'turn': 1,
         'clients': [],
