@@ -10,15 +10,23 @@ def handle_client(client_socket, client_address, player_num, game_state):
     client_socket.send(f"Welcome Player {player_num}!\n".encode('utf-8'))
 
     if player_num == 1:
-        client_socket.send("Choose difficulty (easy, medium, hard): ".encode('utf-8'))
         difficulty = client_socket.recv(16).decode('utf-8').strip().lower()
+        
+        # Loop until a valid difficulty is chosen
         while difficulty not in hangman_words.word_list:
             client_socket.send("Invalid difficulty. Choose again (easy, medium, hard): ".encode('utf-8'))
             difficulty = client_socket.recv(16).decode('utf-8').strip().lower()
         
+        # Initialize the game state based on chosen difficulty
         game_state['difficulty'] = difficulty
         game_state['chosen_word'] = random.choice(hangman_words.word_list[difficulty])
         game_state['display'] = ['-' for _ in range(len(game_state['chosen_word']))]
+        game_state['ready'] = True  # Set the game state to ready after initialization
+
+    else:
+        # Wait until Player 1 initializes the game state
+        while not game_state['ready']:
+            continue
 
     while game_state['lives'] > 0 and '-' in game_state['display']:
         if game_state['turn'] != player_num:
@@ -77,6 +85,7 @@ def server(host='localhost', port=8082):
         'used_letters': [],
         'turn': 1,
         'clients': [],
+        'ready': False,  # Game state is not ready until Player 1 sets it up
     }
 
     while len(game_state['clients']) < 2:
@@ -86,6 +95,8 @@ def server(host='localhost', port=8082):
         threading.Thread(target=handle_client, args=(client_socket, client_address, player_num, game_state)).start()
 
 server()
+
+
 
     
 

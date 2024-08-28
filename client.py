@@ -10,6 +10,10 @@ def client(host='localhost', port=8082):
             if message:
                 print(message)
 
+            if "Choose difficulty" in message:
+                difficulty = input("Enter difficulty (easy, medium, hard): ")
+                client_socket.send(difficulty.encode('utf-8'))
+            
             if "Your turn" in message:
                 guess = input("Enter a letter: ")
                 client_socket.send(guess.encode('utf-8'))
@@ -20,3 +24,4 @@ def client(host='localhost', port=8082):
         client_socket.close()
 
 client()
+
