@@ -62,6 +62,7 @@ def handle_client(client_socket, client_address, player_num, game_state):
     else:
         if game_state['lives'] == 0:
             client_socket.send(f"You lost all your lives.\n".encode('utf-8'))
+            client_socket.send(f"{hangman_art.stages[game_state['lives']]}\n".encode('utf-8'))
         client_socket.send(f"Game over! The word was {game_state['chosen_word']}!\n".encode('utf-8'))
 
     client_socket.close()
@@ -69,6 +70,7 @@ def handle_client(client_socket, client_address, player_num, game_state):
 def notify_all_clients(game_state):
     for client in game_state['clients']:
         try:
+            client.send(f"{hangman_art.stages[game_state['lives']]}\n".encode('utf-8'))
             client.send(f"Wrong_letters: {', '.join(game_state['wrong_letters'])}\n".encode('utf-8'))
             client.send(f"Lives: {game_state['lives']}\n".encode('utf-8'))
         except:
