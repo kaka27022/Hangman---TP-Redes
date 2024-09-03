@@ -23,5 +23,4 @@ def client(host='localhost', port=8082):
     finally:
         client_socket.close()
 
-client()
 
