@@ -11,11 +11,11 @@ def handle_client(client_socket, client_address, player_num, game_state):
 
         # Espera o jogador 1 escolher a dificuldade
         difficulty = client_socket.recv(1024).decode('utf-8')
-        game_state['difficulty'] = difficulty
-        print(f"Player {player_num} chose difficulty: {difficulty}")
+        game_state['difficulty'] = difficulty.lower()
+        print(f"Player {player_num} chose difficulty: {difficulty.lower()}")
 
         # Escolha a palavra e prepare o estado do jogo
-        game_state['chosen_word'] = random.choice(hangman_words.word_list[difficulty])
+        game_state['chosen_word'] = random.choice(hangman_words.word_list[difficulty.lower()])
         game_state['display'] = ['-' for _ in range(len(game_state['chosen_word']))]
         game_state['ready'] = True
 

@@ -3,6 +3,7 @@ import threading
 
 from tkinter import *
 from styles import *
+from game_info import game_state
 
 # Função para inicializar o cliente
 def client(host='localhost', port=8082):
@@ -30,8 +31,12 @@ def handle_server_message(message):
         show_choose_difficulty_screen()
     elif "Your turn" in message:
         show_guess_letter_screen()
-    elif "You won" in message:
+    elif "Lives: " in message:
+        show_informations()
+    elif "you won" in message:
         show_player_won_screen()
+    elif "You lost" in message:
+        show_player_lost_screen()
     elif "Game over" in message:
         show_game_over_screen()
     # Adicione mais condições para diferentes tipos de mensagens
@@ -71,9 +76,12 @@ def send_difficulty(difficulty, janela):
 
 def show_guess_letter_screen():
     janela = Tk()
-    janela.title("Adivinhe a Letra")
+    janela.title("Jogo da Forca")
     janela.configure(background="#486441")
     janela.geometry("802x708")
+
+    show_word(janela, game_state)
+    time_player(janela, game_state)
 
     # Aqui você pode adicionar a lógica para mostrar a palavra parcial, etc.
     Label(janela, text="Sua vez de adivinhar uma letra:", font=("Georgia", 20), fg="#EBE8CD", bg="#486441", justify="center").pack(pady=30)
@@ -81,6 +89,9 @@ def show_guess_letter_screen():
     entrada.pack(pady=20)
     
     Button(janela, text="Enviar", font=("Georgia", 20), fg="#EBE8CD", bg="#617C5A", command=lambda: send_guess(entrada.get(), janela)).pack(pady=20)
+
+    show_hang(janela, game_state)
+    show_wrong_letters(janela, game_state)
 
     janela.mainloop()
 
@@ -92,26 +103,69 @@ def send_guess(guess, janela):
 # Exemplo de função para mostrar a tela de vitória
 def show_player_won_screen():
     janela = Tk()
-    janela.title("Você Ganhou!")
+    janela.title("Jogo da Forca")
     janela.configure(background="#486441")
     janela.geometry("802x708")
 
-    Label(janela, text="Parabéns, você venceu!", font=("Georgia", 35), fg="#EBE8CD", bg="#486441", justify="center").pack(pady=30)
+    you_won(janela)
+    show_word(janela, game_state)
+
     img = PhotoImage(file="./art/trophy.png")
-    Label(janela, image=img, bg="#486441").pack(pady=30)
+    label_imagem = Label(janela, 
+                         image=img,
+                         bg="#486441")
+    label_imagem.image = img  # Mantenha uma referência à imagem
+    label_imagem.pack(pady=30)
+
+    janela.mainloop()
+
+def show_player_lost_screen():
+    janela = Tk()
+    janela.title("Jogo da Forca")
+    janela.configure(background="#486441")
+    janela.geometry("802x708")
+
+    you_lost(janela)
+    show_word(janela, game_state)
+
+    img = PhotoImage(file="./art/emoji.png")
+    label_imagem = Label(janela, 
+                         image=img,
+                         bg="#486441")
+    label_imagem.image = img  # Mantenha uma referência à imagem
+    label_imagem.pack(pady=30)
+
+    janela.mainloop()
+
+def show_informations():
+    janela = Tk()
+    janela.title("Jogo da Forca")
+    janela.configure(background="#486441")
+    janela.geometry("802x708")
+
+    # Se ultima letra jogada existir na palavra
+    if game_state['aux'] == 1: 
+        letter_in_word(janela)
+    else:
+    # Se ultima letra jogada não existir na palavra
+        letter_not_in_word(janela)
+
+    show_hang(janela, game_state)
+    show_word(janela, game_state)
+    show_wrong_letters(janela, game_state)
 
     janela.mainloop()
 
 # Função para mostrar a tela de derrota
 def show_game_over_screen():
     janela = Tk()
-    janela.title("Fim de Jogo")
+    janela.title("Jogo da Forca")
     janela.configure(background="#486441")
     janela.geometry("802x708")
 
-    Label(janela, text="Game Over", font=("Georgia", 35), fg="#EBE8CD", bg="#486441", justify="center").pack(pady=30)
-    img = PhotoImage(file="./art/GAMEOVER!.png")
-    Label(janela, image=img, bg="#486441").pack(pady=30)
+    loser(janela)
+    show_word(janela, game_state)
+    show_hang(janela, game_state)
 
     janela.mainloop()
 

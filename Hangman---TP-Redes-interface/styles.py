@@ -128,9 +128,9 @@ def welcome_player(janela):
                 justify="center")
     label_inicio.pack(pady=30)
 
-def time_player(janela):
+def time_player(janela, game_state):
     label = Label(janela,
-                          text="Sua vez, Jogador 1:",
+                          text=f"Sua vez, Jogador {game_state['turn']}:",
                           font= ("Georgia", 35),
                           fg="#EBE8CD",
                           bg="#486441",
