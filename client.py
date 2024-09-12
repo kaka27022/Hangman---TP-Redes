@@ -1,5 +1,6 @@
 import socket
 import threading
+import json
 
 from tkinter import *
 from styles import *
@@ -31,15 +32,29 @@ def handle_server_message(message):
         show_choose_difficulty_screen()
     elif "Your turn" in message:
         show_guess_letter_screen()
-    elif "Lives: " in message:
-        show_informations()
+    elif "Game State" in message:
+        # Atualize as informações do estado do jogo
+        update_game_info(message)
     elif "you won" in message:
         show_player_won_screen()
     elif "You lost" in message:
         show_player_lost_screen()
     elif "Game over" in message:
         show_game_over_screen()
-    # Adicione mais condições para diferentes tipos de mensagens
+
+def update_game_info(message):
+    if "Game State" in message:
+        # Extrai o estado do jogo da mensagem
+        game_state_str = message.split("Game State: ")[1].strip()
+        game_info = json.loads(game_state_str)  # Use json.loads para desserializar
+
+        # Atualize o game_state local
+        game_state['display'] = list(game_info['display'])
+        game_state['wrong_letters'] = game_info['wrong_letters']
+        game_state['turn'] = game_info['turn']
+        game_state['Mistakes'] = game_info['Mistakes']
+
+        print("Atualizando estado do jogo:", game_state)
 
 # As funções show_x_screen são chamadas para atualizar a interface gráfica
 def show_choose_difficulty_screen():
@@ -65,16 +80,17 @@ def show_choose_difficulty_screen():
                font=("Georgia", 20), 
                fg="#EBE8CD", 
                bg="#617C5A", 
-               command=lambda d=difficulty: send_difficulty(d, janela)).pack(pady=20)
+               command=lambda d=difficulty: send_difficulty(d, janela, client_socket)).pack(pady=20)
 
     janela.mainloop()
 
-def send_difficulty(difficulty, janela):
+def send_difficulty(difficulty, janela, client_socket):
     client_socket.send(difficulty.encode('utf-8'))
     # Fecha a janela após enviar
     janela.destroy()
 
 def show_guess_letter_screen():
+    print("Guess letter screen")
     janela = Tk()
     janela.title("Jogo da Forca")
     janela.configure(background="#486441")
@@ -88,14 +104,14 @@ def show_guess_letter_screen():
     entrada = Entry(janela, font=("Georgia", 20), width=20)
     entrada.pack(pady=20)
     
-    Button(janela, text="Enviar", font=("Georgia", 20), fg="#EBE8CD", bg="#617C5A", command=lambda: send_guess(entrada.get(), janela)).pack(pady=20)
+    Button(janela, text="Enviar", font=("Georgia", 20), fg="#EBE8CD", bg="#617C5A", command=lambda: send_guess(entrada.get(), janela, client_socket)).pack(pady=20)
 
     show_hang(janela, game_state)
     show_wrong_letters(janela, game_state)
 
     janela.mainloop()
 
-def send_guess(guess, janela):
+def send_guess(guess, janela, client_socket):
     client_socket.send(guess.encode('utf-8'))
     # Fecha a janela após enviar
     janela.destroy()
@@ -164,6 +180,7 @@ def show_game_over_screen():
     janela.geometry("802x708")
 
     loser(janela)
+    
     show_word(janela, game_state)
     show_hang(janela, game_state)
 

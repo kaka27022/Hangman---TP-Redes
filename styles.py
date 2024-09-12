@@ -17,7 +17,7 @@ def welcome_player(janela):
 
 def show_word(janela, game_state):
     label_word = Label(janela, 
-                       text=f"Palavra: {' '.join(game_state['display'])}",
+                       text=f"Palavra: {game_state['display']}",
                        font= ("Georgia", 35),
                        fg="#EBE8CD",
                        bg="#486441",
@@ -42,7 +42,7 @@ def show_hang(janela,game_state):
 
 def show_wrong_letters(janela, game_state):
     label_wrong_letters = Label(janela, 
-                               text=f"Letras erradas: {', '.join(game_state['wrong_letters'])}",
+                               text=f"Letras erradas: {game_state['wrong_letters']}",
                                font= ("Georgia", 35),
                                fg="#EBE8CD",
                                bg="#486441",

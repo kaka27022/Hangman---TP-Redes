@@ -1,7 +1,7 @@
 game_state = {
     'difficulty': None,
-    'chosen_word': None,
-    'display': None,
+    'chosen_word': " ",
+    'display': " ",
     'used_letters': [],
     'wrong_letters': [],
     'lives': 6,
