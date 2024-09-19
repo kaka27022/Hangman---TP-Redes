@@ -60,9 +60,11 @@ def handle_client(client_socket, client_address, player_num, game_state):
 
                 # Switch turn
                 game_state['turn'] = 1 if game_state['turn'] == 2 else 2
+                notify_all_clients(None, game_state)  # Notify all clients of updated state
                 print(game_state)
 
-        notify_all_clients(None, game_state)  # Notify all clients of updated state
+        # **Enviar o estado do jogo atualizado após cada jogada**
+        #notify_all_clients(None, game_state)  # Notify all clients of updated state
 
     # Check for end of game and notify clients
     if '-' not in game_state['display']:
@@ -74,6 +76,7 @@ def handle_client(client_socket, client_address, player_num, game_state):
 
     client_socket.close()
 
+
 def notify_all_clients(message, game_state):
     game_info_json = json.dumps({
         "display": ''.join(game_state['display']),
@@ -81,6 +84,7 @@ def notify_all_clients(message, game_state):
         "turn": game_state['turn'],
         "Mistakes": game_state['Mistakes'],
         "aux": game_state['aux'],  # Adiciona o novo campo auxiliar ao estado do jogo
+        "chosen_word": game_state['chosen_word'],
     })
 
     for client in game_state['clients']:

@@ -27,19 +27,23 @@ def client(host='localhost', port=8082):
     return client_socket
 
 # Função para lidar com mensagens do servidor
+# Função para lidar com mensagens do servidor
 def handle_server_message(message):
     if "Choose difficulty" in message:
         show_choose_difficulty_screen()
-    elif "Your turn" in message:
-        show_guess_letter_screen()  # Atualiza a interface com base na vez do jogador
-    elif "Game State" in message:
-        update_game_info(message)
     elif "you won" in message:
         show_player_won_screen()
     elif "You lost" in message:
         show_player_lost_screen()
     elif "Game over" in message:
         show_game_over_screen()
+    elif "Your turn" in message:
+        # Atualiza as informações do jogo antes de mostrar a tela de adivinhação
+        update_game_info(message)
+        show_guess_letter_screen()  # Atualiza a interface com base na vez do jogador
+    elif "Game State" in message:
+        update_game_info(message)
+        show_informations()  # Atualiza a interface do jogo
 
 
 def update_game_info(message):
@@ -53,10 +57,11 @@ def update_game_info(message):
             game_state['turn'] = game_info['turn']
             game_state['Mistakes'] = game_info['Mistakes']
             game_state['aux'] = game_info['aux']
+            game_state['chosen_word'] = game_info['chosen_word']
 
             # Atualize a interface ou imprima o estado atualizado
             print("Atualizando estado do jogo:", game_state)
-            show_informations()  # Atualiza a interface do jogo
+            #show_informations()  # Atualiza a interface do jogo
         except (KeyError, json.JSONDecodeError) as e:
             print(f"Erro ao atualizar game state: {e}")
 
@@ -94,16 +99,18 @@ def send_difficulty(difficulty, janela, client_socket):
     # Fecha a janela após enviar
     janela.destroy()
 
+# Função para mostrar a interface de adivinhar letra
 def show_guess_letter_screen():
     janela = Tk()
     janela.title("Jogo da Forca")
     janela.configure(background="#486441")
     janela.geometry("802x708")
 
-    # Exibir a palavra atual e o jogador da vez
+    # Atualizar a interface com as informações mais recentes do jogo
     show_word(janela, game_state)
     time_player(janela, game_state)
 
+    # Verifica se é a vez do jogador
     if game_state['turn'] == 1 or game_state['turn'] == 2:
         Label(janela, text="Sua vez de adivinhar uma letra:", font=("Georgia", 20), fg="#EBE8CD", bg="#486441", justify="center").pack(pady=30)
         entrada = Entry(janela, font=("Georgia", 20), width=20)
@@ -114,6 +121,7 @@ def show_guess_letter_screen():
         # Se não for a vez do jogador, exibir uma mensagem informativa
         Label(janela, text="Aguarde sua vez...", font=("Georgia", 20), fg="#EBE8CD", bg="#486441", justify="center").pack(pady=30)
 
+    # Mostrar o estado atual do jogo (forca, letras erradas, etc.)
     show_hang(janela, game_state)
     show_wrong_letters(janela, game_state)
 
@@ -134,7 +142,13 @@ def show_player_won_screen():
     janela.geometry("802x708")
 
     you_won(janela)
-    show_word(janela, game_state)
+    label_word = Label(janela, 
+                       text=f"Palavra: {game_state['chosen_word']}",
+                       font= ("Georgia", 35),
+                       fg="#EBE8CD",
+                       bg="#486441",
+                       justify="center")
+    label_word.pack(pady=20)
 
     img = PhotoImage(file="./art/trophy.png")
     label_imagem = Label(janela, 
@@ -152,7 +166,13 @@ def show_player_lost_screen():
     janela.geometry("802x708")
 
     you_lost(janela)
-    show_word(janela, game_state)
+    label_word = Label(janela, 
+                       text=f"Palavra: {game_state['chosen_word']}",
+                       font= ("Georgia", 35),
+                       fg="#EBE8CD",
+                       bg="#486441",
+                       justify="center")
+    label_word.pack(pady=20)
 
     img = PhotoImage(file="./art/emoji.png")
     label_imagem = Label(janela, 
