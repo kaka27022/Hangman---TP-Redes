@@ -31,10 +31,10 @@ def client(host='localhost', port=8082):
 def handle_server_message(message):
     if "Choose difficulty" in message:
         show_choose_difficulty_screen()
-    elif "you won" in message:
-        show_player_won_screen()
     elif "You lost" in message:
         show_player_lost_screen()
+    elif "you won" in message:
+        show_player_won_screen()
     elif "Game over" in message:
         show_game_over_screen()
     elif "Your turn" in message:
@@ -104,7 +104,7 @@ def show_guess_letter_screen():
     janela = Tk()
     janela.title("Jogo da Forca")
     janela.configure(background="#486441")
-    janela.geometry("802x708")
+    janela.geometry("802x808")
 
     # Atualizar a interface com as informações mais recentes do jogo
     show_word(janela, game_state)
@@ -139,9 +139,18 @@ def show_player_won_screen():
     janela = Tk()
     janela.title("Jogo da Forca")
     janela.configure(background="#486441")
-    janela.geometry("802x708")
+    janela.geometry("802x808")
 
     you_won(janela)
+
+    label_word = Label(janela, 
+                       text=f"Vencedor: {game_state['turn']}",
+                       font= ("Georgia", 35),
+                       fg="#EBE8CD",
+                       bg="#486441",
+                       justify="center")
+    label_word.pack(pady=20)
+
     label_word = Label(janela, 
                        text=f"Palavra: {game_state['chosen_word']}",
                        font= ("Georgia", 35),
@@ -163,9 +172,18 @@ def show_player_lost_screen():
     janela = Tk()
     janela.title("Jogo da Forca")
     janela.configure(background="#486441")
-    janela.geometry("802x708")
+    janela.geometry("802x08")
 
     you_lost(janela)
+
+    label_word = Label(janela, 
+                       text=f"Perdedor: {game_state['turn']}",
+                       font= ("Georgia", 35),
+                       fg="#EBE8CD",
+                       bg="#486441",
+                       justify="center")
+    label_word.pack(pady=20)
+
     label_word = Label(janela, 
                        text=f"Palavra: {game_state['chosen_word']}",
                        font= ("Georgia", 35),

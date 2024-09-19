@@ -67,12 +67,13 @@ def handle_client(client_socket, client_address, player_num, game_state):
         #notify_all_clients(None, game_state)  # Notify all clients of updated state
 
     # Check for end of game and notify clients
-    if '-' not in game_state['display']:
+    if '-' not in game_state['display'] and game_state['turn'] != player_num:
         notify_all_clients("you won", game_state)
-    elif game_state['lives'] == 0:
-        notify_all_clients("Game over", game_state)
-    else: 
-        notify_all_clients("You lost", game_state)  # Notify all clients of updated state
+    else:
+        if game_state['lives'] == 0:
+            notify_all_clients("You lost", game_state)
+        else:
+            notify_all_clients("Game over!", game_state)
 
     client_socket.close()
 
