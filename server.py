@@ -75,21 +75,20 @@ def handle_client(client_socket, client_address, player_num, game_state):
     client_socket.close()
 
 def notify_all_clients(message, game_state):
-    # Serializa o game_state para string usando JSON
     game_info_json = json.dumps({
         "display": ''.join(game_state['display']),
         "wrong_letters": game_state['wrong_letters'],
         "turn": game_state['turn'],
         "Mistakes": game_state['Mistakes'],
+        "aux": game_state['aux'],  # Adiciona o novo campo auxiliar ao estado do jogo
     })
 
     for client in game_state['clients']:
         try:
             if message:
-                client.send(message.encode('utf-8'))
-            
-            # Envia o estado atualizado do jogo em formato JSON
-            client.send(f"Game State: {game_info_json}\n".encode('utf-8'))
+                client.send((message + "\n").encode('utf-8'))  # Certifique-se de enviar uma nova linha
+            # Envia o estado do jogo atualizado em formato JSON
+            client.send(f"Game State: {game_info_json}\n".encode('utf-8'))  # Adiciona a nova linha
         except Exception as e:
             print(f"Failed to send message to client: {e}")
 
