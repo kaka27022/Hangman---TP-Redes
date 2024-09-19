@@ -37,13 +37,34 @@ def handle_client(client_socket, client_address, player_num, game_state):
             if game_state['turn'] != player_num:
                 continue
 
-            # Recebe a letra jogada
-            client_socket.send("Your turn".encode('utf-8'))
-            guess = client_socket.recv(16).decode('utf-8').strip().lower()
+            chatting = True
 
+            while chatting:
+            # Recebe a letra jogada
+                client_socket.send("Your turn".encode('utf-8'))
+                guess_or_chat = client_socket.recv(16).decode('utf-8').strip().lower()
+                print("Teste 1")
+
+                if len(guess_or_chat) == 1:
+                    print("Teste 2")
+                    guess = guess_or_chat
+                    chatting = False
+                else: 
+                    print("Teste 3")
+                    broadcast_chat(player_num, guess_or_chat, game_state)
+            
             if guess in game_state['used_letters']:
-                client_socket.send(f"Your turn".encode('utf-8'))
-                guess = client_socket.recv(16).decode('utf-8').strip().lower()
+                client_socket.send("Your turn".encode('utf-8'))
+                guess_or_chat = client_socket.recv(16).decode('utf-8').strip().lower()
+                print("Teste 4")
+
+                if len(guess_or_chat) == 1:
+                    print("Teste 5")
+                    guess = guess_or_chat
+                    chatting = False
+                else: 
+                    print("Teste 6")
+                    broadcast_chat(player_num, guess_or_chat, game_state)
 
             else:
                 game_state['used_letters'].append(guess)
@@ -61,7 +82,7 @@ def handle_client(client_socket, client_address, player_num, game_state):
                 # Troca a vez
                 game_state['turn'] = 1 if game_state['turn'] == 2 else 2
                 notify_all_clients(None, game_state)  # Atualiza as informacoes
-                print(game_state)
+                #print(game_state)
 
     # Verifica se o jogo terminou
     if '-' not in game_state['display']:
@@ -97,8 +118,6 @@ def notify_client(client, message, game_state):
     except Exception as e:
         print(f"Failed to send message to client: {e}")
 
-
-
 # Funcao para notificar todos os clientes
 def notify_all_clients(message, game_state):
     game_info_json = json.dumps({
@@ -118,6 +137,14 @@ def notify_all_clients(message, game_state):
             client.send(f"Game State: {game_info_json}\n".encode('utf-8'))  # Adiciona a nova linha
         except Exception as e:
             print(f"Failed to send message to client: {e}")
+
+# Funcao para transmitir mensagens de chat entre os jogadores
+def broadcast_chat(player_num, message, game_state):
+    for client in game_state['clients']:
+        try:
+            client.send(f"Player {player_num} says: {message}\n".encode('utf-8'))
+        except Exception as e:
+            print(f"Failed to send chat message to client: {e}")
 
 # Inicializa o jogo/servidor
 def server(host='localhost', port=8082):

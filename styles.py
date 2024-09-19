@@ -55,6 +55,12 @@ def you_won(janela):
     label_imagem.image = img  # Mantenha uma referência à imagem
     label_imagem.pack(pady=30)
 
+def chat_image(janela):
+    img = PhotoImage(file=f"./art/CHAT.png")
+    label_imagem = Label(janela, image=img, bg="#486441", fg="#EBE8CD")
+    label_imagem.image = img  # Mantenha uma referência à imagem
+    label_imagem.pack(pady=30)
+
 def you_lost(janela):
     img = PhotoImage(file=f"./art/VOCEPERDEU!.png")
     label_imagem = Label(janela, image=img, bg="#486441", fg="#EBE8CD")

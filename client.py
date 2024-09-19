@@ -6,6 +6,8 @@ from tkinter import *
 from styles import *
 from game_info import game_state
 
+chat_history = []
+
 # Função para inicializar o cliente
 def client(host='localhost', port=8082):
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -28,7 +30,9 @@ def client(host='localhost', port=8082):
 
 # Função para lidar com mensagens do servidor
 def handle_server_message(message):
-    if "Choose difficulty" in message:
+    if "Player" in message and "says" in message:
+        show_chat_message(message)
+    elif "Choose difficulty" in message:
         show_choose_difficulty_screen()
     elif "You lost" in message:
         show_player_lost_screen()
@@ -58,7 +62,7 @@ def update_game_info(message):
             game_state['chosen_word'] = game_info['chosen_word']
 
             # Atualize a interface ou imprima o estado atualizado
-            print("Atualizando estado do jogo:", game_state)
+            #print("Atualizando estado do jogo:", game_state)
         except (KeyError, json.JSONDecodeError) as e:
             print(f"Erro ao atualizar game state: {e}")
 
@@ -115,18 +119,37 @@ def show_guess_letter_screen():
 
         Button(janela, text="Enviar", font=("Georgia", 20), fg="#EBE8CD", bg="#617C5A", command=lambda: send_guess(entrada.get(), janela, client_socket)).pack(pady=20)
 
-    # Mostrar o estado atual do jogo (forca, letras erradas, etc.)
-    show_hang(janela, game_state)
-    show_wrong_letters(janela, game_state)
+    # Mostrar mensagens de chat
+    Label(janela, text="Chat entre jogadores:", font=("Georgia", 20), fg="#EBE8CD", bg="#486441", justify="center").pack(pady=30)
+    chat_box =  Entry(janela, font=("Georgia", 20), width=20)
+    chat_box.pack(pady=20)
+
+    Button(janela, text="Enviar", font=("Georgia", 20), fg="#EBE8CD", bg="#617C5A", command=lambda: send_chat(chat_box.get(), client_socket)).pack(pady=20)
 
     janela.mainloop()
 
+# Função para enviar adivinhações e chat
+def send_chat(chat, client_socket):
+    client_socket.send(chat.encode('utf-8'))
 
 # Manda a letra jogada para o servidor
 def send_guess(guess, janela, client_socket):
     client_socket.send(guess.encode('utf-8'))
     janela.destroy()
 
+def show_chat_message(chat_message):
+    janela = Tk()
+    janela.title("Chat")
+    janela.configure(background="#486441")
+    janela.geometry("502x508")
+
+    chat_image(janela)
+
+    chat_history.append(chat_message)
+
+    Label(janela, text="\n".join(chat_history), font=("Georgia", 20), fg="#EBE8CD", bg="#486441", justify="center").pack(pady=30)
+
+    janela.mainloop()
 
 # Função para mostrar a tela de vitória
 def show_player_won_screen():
