@@ -13,11 +13,11 @@ def handle_client(client_socket, client_address, player_num, game_state):
     client_socket.send(f"Welcome Player {player_num}!\n".encode('utf-8'))
 
     if player_num == 1:
-        # Player 1 sets up the game
+        # Player 1 inicia o jogo
         client_socket.send("Choose difficulty".encode('utf-8'))
         difficulty = client_socket.recv(16).decode('utf-8').strip().lower()
         
-        # Initialize the game state based on chosen difficulty
+        # Inicializa o jogo baseado na dificuldade
         with game_state_lock:
             game_state['difficulty'] = difficulty
             game_state['chosen_word'] = random.choice(hangman_words.word_list[difficulty])
@@ -28,7 +28,7 @@ def handle_client(client_socket, client_address, player_num, game_state):
         print(game_state['chosen_word'])
 
     else:
-        # Wait until Player 1 initializes the game state
+        # Espera player 1 inicializar o jogo
         while not game_state['ready']:
             continue
 
@@ -37,7 +37,7 @@ def handle_client(client_socket, client_address, player_num, game_state):
             if game_state['turn'] != player_num:
                 continue
 
-            # Send current game state and prompt for a guess
+            # Recebe a letra jogada
             client_socket.send("Your turn".encode('utf-8'))
             guess = client_socket.recv(16).decode('utf-8').strip().lower()
 
@@ -58,26 +58,48 @@ def handle_client(client_socket, client_address, player_num, game_state):
                     game_state['aux'] = 0
                     game_state['wrong_letters'].append(guess)
 
-                # Switch turn
+                # Troca a vez
                 game_state['turn'] = 1 if game_state['turn'] == 2 else 2
-                notify_all_clients(None, game_state)  # Notify all clients of updated state
+                notify_all_clients(None, game_state)  # Atualiza as informacoes
                 print(game_state)
 
-        # **Enviar o estado do jogo atualizado após cada jogada**
-        #notify_all_clients(None, game_state)  # Notify all clients of updated state
+    # Verifica se o jogo terminou
+    if '-' not in game_state['display']:
+        # Jogador atual venceu
+        winner = player_num
+        loser = 1 if player_num == 2 else 2
+        
+        # Notificar o vencedor e o perdedor
+        notify_client(game_state['clients'][winner - 1], "you won", game_state)
+        notify_client(game_state['clients'][loser - 1], "You lost", game_state)
 
-    # Check for end of game and notify clients
-    if '-' not in game_state['display'] and game_state['turn'] != player_num:
-        notify_all_clients("you won", game_state)
-    else:
-        if game_state['lives'] == 0:
-            notify_all_clients("You lost", game_state)
-        else:
-            notify_all_clients("Game over!", game_state)
+    elif game_state['lives'] == 0:
+        # Se o número de vidas acabar, ambos perdem
+        notify_all_clients("Game over!", game_state)
 
     client_socket.close()
 
+# Funcao para notificar apenas um cliente
+def notify_client(client, message, game_state):
+    game_info_json = json.dumps({
+        "display": ''.join(game_state['display']),
+        "wrong_letters": game_state['wrong_letters'],
+        "turn": game_state['turn'],
+        "Mistakes": game_state['Mistakes'],
+        "aux": game_state['aux'],
+        "chosen_word": game_state['chosen_word'],
+    })
 
+    try:
+        if message:
+            client.send((message + "\n").encode('utf-8'))  # Envia a mensagem personalizada
+        client.send(f"Game State: {game_info_json}\n".encode('utf-8'))  # Envia o estado do jogo
+    except Exception as e:
+        print(f"Failed to send message to client: {e}")
+
+
+
+# Funcao para notificar todos os clientes
 def notify_all_clients(message, game_state):
     game_info_json = json.dumps({
         "display": ''.join(game_state['display']),
@@ -97,7 +119,7 @@ def notify_all_clients(message, game_state):
         except Exception as e:
             print(f"Failed to send message to client: {e}")
 
-
+# Inicializa o jogo/servidor
 def server(host='localhost', port=8082):
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)

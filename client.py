@@ -27,7 +27,6 @@ def client(host='localhost', port=8082):
     return client_socket
 
 # Função para lidar com mensagens do servidor
-# Função para lidar com mensagens do servidor
 def handle_server_message(message):
     if "Choose difficulty" in message:
         show_choose_difficulty_screen()
@@ -38,14 +37,13 @@ def handle_server_message(message):
     elif "Game over" in message:
         show_game_over_screen()
     elif "Your turn" in message:
-        # Atualiza as informações do jogo antes de mostrar a tela de adivinhação
         update_game_info(message)
-        show_guess_letter_screen()  # Atualiza a interface com base na vez do jogador
+        show_guess_letter_screen() 
     elif "Game State" in message:
         update_game_info(message)
-        show_informations()  # Atualiza a interface do jogo
+        show_informations()  
 
-
+# Atualiza informacoes do jogo
 def update_game_info(message):
     if "Game State" in message:
         try:
@@ -61,12 +59,11 @@ def update_game_info(message):
 
             # Atualize a interface ou imprima o estado atualizado
             print("Atualizando estado do jogo:", game_state)
-            #show_informations()  # Atualiza a interface do jogo
         except (KeyError, json.JSONDecodeError) as e:
             print(f"Erro ao atualizar game state: {e}")
 
 
-# As funções show_x_screen são chamadas para atualizar a interface gráfica
+# Interface de escolher dificuldade do jogo
 def show_choose_difficulty_screen():
     janela = Tk()
     janela.title("Jogo da Forca")
@@ -94,9 +91,9 @@ def show_choose_difficulty_screen():
 
     janela.mainloop()
 
+# Manda a dificuldade para o servidor
 def send_difficulty(difficulty, janela, client_socket):
     client_socket.send(difficulty.encode('utf-8'))
-    # Fecha a janela após enviar
     janela.destroy()
 
 # Função para mostrar a interface de adivinhar letra
@@ -117,9 +114,6 @@ def show_guess_letter_screen():
         entrada.pack(pady=20)
 
         Button(janela, text="Enviar", font=("Georgia", 20), fg="#EBE8CD", bg="#617C5A", command=lambda: send_guess(entrada.get(), janela, client_socket)).pack(pady=20)
-    else:
-        # Se não for a vez do jogador, exibir uma mensagem informativa
-        Label(janela, text="Aguarde sua vez...", font=("Georgia", 20), fg="#EBE8CD", bg="#486441", justify="center").pack(pady=30)
 
     # Mostrar o estado atual do jogo (forca, letras erradas, etc.)
     show_hang(janela, game_state)
@@ -128,13 +122,13 @@ def show_guess_letter_screen():
     janela.mainloop()
 
 
+# Manda a letra jogada para o servidor
 def send_guess(guess, janela, client_socket):
     client_socket.send(guess.encode('utf-8'))
-    # Fecha a janela após enviar a jogada
     janela.destroy()
 
 
-# Exemplo de função para mostrar a tela de vitória
+# Função para mostrar a tela de vitória
 def show_player_won_screen():
     janela = Tk()
     janela.title("Jogo da Forca")
@@ -168,11 +162,12 @@ def show_player_won_screen():
 
     janela.mainloop()
 
+# Funcao para mostrar tela de derrota
 def show_player_lost_screen():
     janela = Tk()
     janela.title("Jogo da Forca")
     janela.configure(background="#486441")
-    janela.geometry("802x08")
+    janela.geometry("802x808")
 
     you_lost(janela)
 
@@ -196,11 +191,12 @@ def show_player_lost_screen():
     label_imagem = Label(janela, 
                          image=img,
                          bg="#486441")
-    label_imagem.image = img  # Mantenha uma referência à imagem
+    label_imagem.image = img  
     label_imagem.pack(pady=30)
 
     janela.mainloop()
 
+# Mostra informacoes do jogo apos cada jogada
 def show_informations():
     janela = Tk()
     janela.title("Jogo da Forca")
@@ -220,7 +216,7 @@ def show_informations():
 
     janela.mainloop()
 
-# Função para mostrar a tela de derrota
+# Função para mostrar GAME OVER
 def show_game_over_screen():
     janela = Tk()
     janela.title("Jogo da Forca")
@@ -229,7 +225,14 @@ def show_game_over_screen():
 
     loser(janela)
     
-    show_word(janela, game_state)
+    label_word = Label(janela, 
+                       text=f"Palavra: {game_state['chosen_word']}",
+                       font= ("Georgia", 35),
+                       fg="#EBE8CD",
+                       bg="#486441",
+                       justify="center")
+    label_word.pack(pady=20)
+    
     show_hang(janela, game_state)
 
     janela.mainloop()

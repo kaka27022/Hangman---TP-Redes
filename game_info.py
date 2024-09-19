@@ -9,5 +9,5 @@ game_state = {
     'turn': 1,
     'aux': 0,
     'clients': [],
-    'ready': False,  # Game state is not ready until Player 1 sets it up
+    'ready': False,  
 }
