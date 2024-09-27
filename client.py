@@ -1,6 +1,7 @@
 import socket
 import threading
 import json
+import pygame
 
 from tkinter import *
 from styles import *
@@ -93,6 +94,9 @@ def show_choose_difficulty_screen():
 
 # Manda a dificuldade para o servidor
 def send_difficulty(difficulty, janela, client_socket):
+    pygame.mixer.init()
+    pygame.mixer.music.load('./sounds/select-sound-121244.wav')
+    pygame.mixer.music.play()
     client_socket.send(difficulty.encode('utf-8'))
     janela.destroy()
 
@@ -124,6 +128,9 @@ def show_guess_letter_screen():
 
 # Manda a letra jogada para o servidor
 def send_guess(guess, janela, client_socket):
+    pygame.mixer.init()
+    pygame.mixer.music.load('./sounds/select-sound-121244.wav')
+    pygame.mixer.music.play()
     client_socket.send(guess.encode('utf-8'))
     janela.destroy()
 
@@ -134,6 +141,10 @@ def show_player_won_screen():
     janela.title("Jogo da Forca")
     janela.configure(background="#486441")
     janela.geometry("802x808")
+
+    pygame.mixer.init()
+    pygame.mixer.music.load('./sounds/victorymale-version-230553.wav')
+    pygame.mixer.music.play()
 
     you_won(janela)
 
@@ -168,6 +179,10 @@ def show_player_lost_screen():
     janela.title("Jogo da Forca")
     janela.configure(background="#486441")
     janela.geometry("802x808")
+
+    pygame.mixer.init()
+    pygame.mixer.music.load('./sounds/sinister-laugh-140131.wav')
+    pygame.mixer.music.play()
 
     you_lost(janela)
 
@@ -204,10 +219,16 @@ def show_informations():
     janela.geometry("802x708")
 
     # Se ultima letra jogada existir na palavra
-    if game_state['aux'] == 1: 
+    if game_state['aux'] == 1:
+        pygame.mixer.init()
+        pygame.mixer.music.load('./sounds/small-applause-6695.wav')
+        pygame.mixer.music.play() 
         letter_in_word(janela)
     else:
     # Se ultima letra jogada não existir na palavra
+        pygame.mixer.init()
+        pygame.mixer.music.load('./sounds/buzzer-or-wrong-answer-20582.wav')
+        pygame.mixer.music.play()
         letter_not_in_word(janela)
 
     show_hang(janela, game_state)
@@ -224,6 +245,10 @@ def show_game_over_screen():
     janela.geometry("802x708")
 
     loser(janela)
+
+    pygame.mixer.init()
+    pygame.mixer.music.load('./sounds/sinister-laugh-140131.wav')
+    pygame.mixer.music.play()
     
     label_word = Label(janela, 
                        text=f"Palavra: {game_state['chosen_word']}",
