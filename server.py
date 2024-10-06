@@ -1,81 +1,125 @@
 import socket
 import random
 import threading
+import json
 
-import hangman_art
 import hangman_words
+from game_info import game_state
+
+game_state_lock = threading.Lock()
 
 def handle_client(client_socket, client_address, player_num, game_state):
     print(f"Player {player_num} connected from {client_address}")
     client_socket.send(f"Welcome Player {player_num}!\n".encode('utf-8'))
-    client_socket.send(f"{hangman_art.logo}\n".encode('utf-8'))
 
     if player_num == 1:
-        client_socket.send("Choose difficulty (easy, medium, hard) ".encode('utf-8'))
+        # Player 1 inicia o jogo
+        client_socket.send("Choose difficulty".encode('utf-8'))
         difficulty = client_socket.recv(16).decode('utf-8').strip().lower()
         
-        # Loop until a valid difficulty is chosen
-        while difficulty not in hangman_words.word_list:
-            client_socket.send("Invalid difficulty. Choose again (easy, medium, hard): ".encode('utf-8'))
-            difficulty = client_socket.recv(16).decode('utf-8').strip().lower()
-        
-        # Initialize the game state based on chosen difficulty
-        game_state['difficulty'] = difficulty
-        game_state['chosen_word'] = random.choice(hangman_words.word_list[difficulty])
-        game_state['display'] = ['-' for _ in range(len(game_state['chosen_word']))]
-        game_state['ready'] = True  # Set the game state to ready after initialization
+        # Inicializa o jogo baseado na dificuldade
+        with game_state_lock:
+            game_state['difficulty'] = difficulty
+            game_state['chosen_word'] = random.choice(hangman_words.word_list[difficulty])
+            game_state['display'] = ['-' for _ in range(len(game_state['chosen_word']))]
+            game_state['ready'] = True  # Set the game state to ready after initialization
+
+        print(game_state['difficulty'])
+        print(game_state['chosen_word'])
 
     else:
-        # Wait until Player 1 initializes the game state
+        # Espera player 1 inicializar o jogo
         while not game_state['ready']:
             continue
 
     while game_state['lives'] > 0 and '-' in game_state['display']:
-        if game_state['turn'] != player_num:
-            continue
+        with game_state_lock:
+            if game_state['turn'] != player_num:
+                continue
 
-        client_socket.send(f"Word: {' '.join(game_state['display'])}\n".encode('utf-8'))
-        client_socket.send(f"Your turn, Player {player_num}!\n".encode('utf-8'))
-        
+            # Recebe a letra jogada
+            client_socket.send("Your turn".encode('utf-8'))
+            guess = client_socket.recv(16).decode('utf-8').strip().lower()
 
-        guess = client_socket.recv(16).decode('utf-8').lower().strip()
-        if guess in game_state['used_letters']:
-            client_socket.send(f"Already guessed {guess}.\n".encode('utf-8'))
-        else:
-            game_state['used_letters'].append(guess)
-            if guess in game_state['chosen_word']:
-                client_socket.send(f"\nLetter {guess} is in the word!\n".encode('utf-8'))
-                for i, letter in enumerate(game_state['chosen_word']):
-                    if letter == guess:
-                        game_state['display'][i] = guess
+            if guess in game_state['used_letters']:
+                client_socket.send(f"Your turn".encode('utf-8'))
+                guess = client_socket.recv(16).decode('utf-8').strip().lower()
+
             else:
-                game_state['lives'] -= 1
-                client_socket.send(f"\nLetter {guess} is not in the word.\n".encode('utf-8'))
-                game_state['wrong_letters'].append(guess)
+                game_state['used_letters'].append(guess)
+                if guess in game_state['chosen_word']:
+                    game_state['aux'] = 1
+                    for i, letter in enumerate(game_state['chosen_word']):
+                        if letter == guess:
+                            game_state['display'][i] = guess
+                else:
+                    game_state['lives'] -= 1
+                    game_state['Mistakes'] += 1
+                    game_state['aux'] = 0
+                    game_state['wrong_letters'].append(guess)
 
-            game_state['turn'] = 1 if game_state['turn'] == 2 else 2
+                # Troca a vez
+                game_state['turn'] = 1 if game_state['turn'] == 2 else 2
+                notify_all_clients(None, game_state)  # Atualiza as informacoes
+                print(game_state)
 
-        notify_all_clients(game_state)
+    # Verifica se o jogo terminou
+    if '-' not in game_state['display']:
+        # Jogador atual venceu
+        winner = player_num
+        loser = 1 if player_num == 2 else 2
+        
+        # Notificar o vencedor e o perdedor
+        notify_client(game_state['clients'][winner - 1], "you won", game_state)
+        notify_client(game_state['clients'][loser - 1], "You lost", game_state)
 
-    if '-' not in game_state['display'] and player_num != game_state['turn']:   # Tem que ser diferente por que a turn muda, descoberta por tentativa
-        client_socket.send(f"Congratulations Player {player_num}, you won! The word was {game_state['chosen_word']}\n".encode('utf-8'))
-    else:
-        if game_state['lives'] == 0:
-            client_socket.send(f"You lost all your lives.\n".encode('utf-8'))
-            client_socket.send(f"{hangman_art.stages[game_state['lives']]}\n".encode('utf-8'))
-        client_socket.send(f"Game over! The word was {game_state['chosen_word']}!\n".encode('utf-8'))
+    elif game_state['lives'] == 0:
+        # Se o número de vidas acabar, ambos perdem
+        notify_all_clients("Game over!", game_state)
 
     client_socket.close()
 
-def notify_all_clients(game_state):
+# Funcao para notificar apenas um cliente
+def notify_client(client, message, game_state):
+    game_info_json = json.dumps({
+        "display": ''.join(game_state['display']),
+        "wrong_letters": game_state['wrong_letters'],
+        "turn": game_state['turn'],
+        "Mistakes": game_state['Mistakes'],
+        "aux": game_state['aux'],
+        "chosen_word": game_state['chosen_word'],
+    })
+
+    try:
+        if message:
+            client.send((message + "\n").encode('utf-8'))  # Envia a mensagem personalizada
+        client.send(f"Game State: {game_info_json}\n".encode('utf-8'))  # Envia o estado do jogo
+    except Exception as e:
+        print(f"Failed to send message to client: {e}")
+
+
+
+# Funcao para notificar todos os clientes
+def notify_all_clients(message, game_state):
+    game_info_json = json.dumps({
+        "display": ''.join(game_state['display']),
+        "wrong_letters": game_state['wrong_letters'],
+        "turn": game_state['turn'],
+        "Mistakes": game_state['Mistakes'],
+        "aux": game_state['aux'],  # Adiciona o novo campo auxiliar ao estado do jogo
+        "chosen_word": game_state['chosen_word'],
+    })
+
     for client in game_state['clients']:
         try:
-            client.send(f"{hangman_art.stages[game_state['lives']]}\n".encode('utf-8'))
-            client.send(f"Wrong_letters: {', '.join(game_state['wrong_letters'])}\n".encode('utf-8'))
-            client.send(f"Lives: {game_state['lives']}\n".encode('utf-8'))
-        except:
-            continue
+            if message:
+                client.send((message + "\n").encode('utf-8'))  # Certifique-se de enviar uma nova linha
+            # Envia o estado do jogo atualizado em formato JSON
+            client.send(f"Game State: {game_info_json}\n".encode('utf-8'))  # Adiciona a nova linha
+        except Exception as e:
+            print(f"Failed to send message to client: {e}")
 
+# Inicializa o jogo/servidor
 def server(host='localhost', port=8082):
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -84,18 +128,6 @@ def server(host='localhost', port=8082):
 
     print(f"Server started on {host}:{port}")
 
-    game_state = {
-        'difficulty': None,
-        'chosen_word': None,
-        'display': None,
-        'used_letters': [],
-        'wrong_letters':[],
-        'lives': 6,
-        'turn': 1,
-        'clients': [],
-        'ready': False,  # Game state is not ready until Player 1 sets it up
-    }
-
     while len(game_state['clients']) < 2:
         client_socket, client_address = server_socket.accept()
         game_state['clients'].append(client_socket)
@@ -103,6 +135,7 @@ def server(host='localhost', port=8082):
         threading.Thread(target=handle_client, args=(client_socket, client_address, player_num, game_state)).start()
 
 server()
+
 
 
 
